@@ -81,19 +81,22 @@ public class ATM {
 			return true;
 		case deposit:
 			output.println("Enter deposit amount: ");
+			return true;
 		case withdraw:
 			output.println("Enter withdrawal amount: ");
+			return true;
 		case transfer:
-			output.println("Enter account number, destination of funds: ");
-		// TODO: prompts for other actions(?)
+			output.println("Enter account number for destination of funds, the origin of funds, and transfer amount. Seperate them by commas: ");
+			//String[ ] elements = input.split(",");
+			return true;
 		default:
 			return false;
 		}
 	}
 
 	private Action performActionAndGetNextAction(String input) throws ATMException, SystemExit {
-		if ("exit".equals(input))
-			throw new SystemExit();
+		if ("exit".equals(input)) {
+			throw new SystemExit(); }
 		if (selectedAction == null) {
 			try {
 				return Action.valueOf(input);
@@ -102,96 +105,140 @@ public class ATM {
 			}
 		}
 		switch (selectedAction) {
-		case login:
-			try {
-				loggedInUserAccounts = AccountAccessor.getUserAccounts(input);
-				return Action.changeAccount;
-			} catch (IOException e) {
-				e.printStackTrace();
-				throw new ATMException("Invalid user ID.");
-			}
-		case changeAccount:
-			if (!input.matches("^\\d{6}$"))
-				throw new ATMException("Invalid account number.");
-			for (String userAccount : loggedInUserAccounts) {
-				if (userAccount.equals(input)) {
-					selectedAccount = input;
-					return null;
+			case login:
+				try {
+					loggedInUserAccounts = AccountAccessor.getUserAccounts(input);
+					return Action.changeAccount;
+				} catch (IOException e) {
+					e.printStackTrace();
+					throw new ATMException("Invalid user ID.");
 				}
-			}
-			throw new ATMException("Account number not found.");
-		case checkBalance:
-			try {
-				BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-				output.println("Balance: $" + balance);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		case deposit:
-			try {
-				BigDecimal depositBD = new BigDecimal(input);
-				// getting the account balance to add to it 
-				BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-				balance = balance.add(depositBD);
+			case changeAccount:
+				if (!input.matches("^\\d{6}$"))
+					throw new ATMException("Invalid account number.");
+				for (String userAccount : loggedInUserAccounts) {
+					if (userAccount.equals(input)) {
+						selectedAccount = input;
+						return null;
+					}
+				}
+				throw new ATMException("Account number not found.");
+				
+			case checkBalance:
+				try {
+					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
+					output.println("Balance: $" + balance);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				break;
+			case deposit:
+				try {
+					BigDecimal depositBD = new BigDecimal(input);
+					// getting the account balance to add to it
+					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
+					balance = balance.add(depositBD);
 
-				//updating the account --> this function is void
-				AccountAccessor.updateAccountBalance(selectedAccount, balance);
+					//updating the account --> this function is void
+					AccountAccessor.updateAccountBalance(selectedAccount, balance);
 
-				// now show the user thier new balance 
+					// now show the user their new balance
 
-				BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
-				output.println("Balance: $" + viewBalance);
+					BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
+					output.println("Balance: $" + viewBalance);
 
-			} catch (IOException e) {
-				output.println("Something went wrong.");
-			}
-		case withdraw:
-			try {
-				BigDecimal withdrawBD = new BigDecimal(input);
-				BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-				balance = balance.subtract(withdrawBD);
-
-				AccountAccessor.updateAccountBalance(selectedAccount, balance);
-
-				BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
-				output.println("Balance: $" + viewBalance);
-					
 				} catch (IOException e) {
 					output.println("Something went wrong.");
 				}
-		case transfer:
-			try{
-					// input = where the funds will go
-					// move money from selected account to the input
-					// code here
-			} catch (IOException e) {
-					output.println("Something went wrong.");
-				}
-		case openNewAcct:
-			try{
-				//this would be once the user is already established
-				// so do two things
-				// 1: write the acc # in the contents of the user file
-				// 2: create a new file for the account, with balance at 0 to start
-			} catch (IOException e) {
-				output.println("Something went wrong.");
+				break;
+			case withdraw:
+				try {
+					BigDecimal withdrawBD = new BigDecimal(input);
+					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
+					balance = balance.subtract(withdrawBD);
+
+					AccountAccessor.updateAccountBalance(selectedAccount, balance);
+
+					BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
+					output.println("Balance: $" + viewBalance);
+						
+					} catch (IOException e) {
+						output.println("Something went wrong.");
+					}
+					break;
+			case transfer:
+				try{
+					String[ ] elements = input.split(",");
+					String accountDestination = elements[0];
+					String accountOrigin = elements[1];
+					String fundsAmount = elements [2];
+					BigDecimal fundsBD = new BigDecimal(fundsAmount);
+
+					//accessing account origin and withdrawing the funds
+					BigDecimal balance = AccountAccessor.getAccountBalance(accountOrigin);
+					balance = balance.subtract(fundsBD);
+					AccountAccessor.updateAccountBalance(accountOrigin, balance);
+
+					//accessing account destination and depositing funds
+					BigDecimal balance2 = AccountAccessor.getAccountBalance(accountDestination);
+					balance2 = balance2.add(fundsBD);
+					AccountAccessor.updateAccountBalance(accountDestination, balance);
+
+					//output new balances for both accounts
+					BigDecimal newBal1 = AccountAccessor.getAccountBalance(accountOrigin);
+					output.println("Balance for account " + accountOrigin + " is " + newBal1);
+
+					BigDecimal newBal2 = AccountAccessor.getAccountBalance(accountDestination);
+					output.println("Balance for account " + accountDestination + " is " + newBal2);
+					
+
+				} catch (IOException e) {
+						output.println("Something went wrong.");
+					}
+				break;
+					//open folder for that user id, get the last account num in a string
+					// just add 1 to that string and store in a new var
+					// write this to the user file
+					// create a new file with this account, balance is 0
+
+
+
+					//String accNums = AccountAccessor.resourceToString(loggedInUserAccounts);
+
+					// String newAccount =
+					//writeStringToFile(loggedInUserAccounts, newContents);
+
+					// probably need to read and write from a file
+					//this would be once the user is already established
+					// so do two things
+					// 1: write the acc # in the contents of the user file
+					// 2: create a new file for the account, with balance at 0 to start
+				// } catch (IOException e) {
+				// 	output.println("Something went wrong.");
+				// }
+			// case accSummary:
+			// 	try{
+			// 		// should display user name, account number, balance, last transaction
+
+			// } catch (IOException e) {
+			// 		output.println("Something went wrong.");
+			// 	}
+			// case tranHistory:
+			// 	try{
+			// 		// for each transaction, display: user, account number, tran type, tran amount, updated balance
+			// 		// every time the user does a transaction, save this info somewhere
+			// 		// append to a list, read to a file?
+
+			// } catch (IOException e) {
+			// 		output.println("Something went wrong.");
+			// 	}
+
+
+
+
 			}
-		case accSummary:
-			try{
-				// would need to create a hashmap of all previous transactions?
-		} catch (IOException e) {
-				output.println("Something went wrong.");
-			}
-
-
-
-			// transfer, openNewAcct, accSummary, tranHistory;
-
-			break;
-		// TODO: handle other actions
-		}
-		return null;
-	}
+			return null;
+		} 
 
 	private static class SystemExit extends Throwable {
 		private static final long serialVersionUID = 1L;

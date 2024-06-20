@@ -7,7 +7,12 @@ import java.nio.file.Path;
 
 public class AccountAccessor {
 
-	static String dataLocation = "../atm-dao-text-impl/data/";
+	static String dataLocation = "/Users/cynthiasomers/training2021/atm/atm-dao-text-impl/data/";
+	// the above variable goes into the files and accesses the data folder
+	// from there, reference this variable to access specific files within that folder 
+
+
+	public static String getAccountBalance;
 
 	public static String[] getUserAccounts(String userId) throws IOException {
 		return resourceToString(dataLocation + "users/" + userId).split(",");
