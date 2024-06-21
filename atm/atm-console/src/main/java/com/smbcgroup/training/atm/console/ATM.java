@@ -1,6 +1,7 @@
 package com.smbcgroup.training.atm.console;
 
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,8 +20,8 @@ public class ATM {
 		login, changeAccount, checkBalance, deposit, withdraw, transfer, openNewAcct, accSummary, tranHistory;
 	}
 	
-	    // declaring necessary objects/also calling them ????
 
+	private String loggedInUserID;
 	private BufferedReader inputReader;
 	private PrintStream output;
 	private String[] loggedInUserAccounts;
@@ -108,6 +109,7 @@ public class ATM {
 			case login:
 				try {
 					loggedInUserAccounts = AccountAccessor.getUserAccounts(input);
+					loggedInUserID = input;
 					return Action.changeAccount;
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -196,55 +198,49 @@ public class ATM {
 						output.println("Something went wrong.");
 					}
 				break;
-					//open folder for that user id, get the last account num in a string
-					// just add 1 to that string and store in a new var
-					// write this to the user file
-					// create a new file with this account, balance is 0
+			case openNewAcct:
+				try {
+					String lastAcc = loggedInUserAccounts[loggedInUserAccounts.length-1];
+					output.println(lastAcc);
+					// parse to an integer, add 1, then turn back to a string
+
+					int lastAccInt = Integer.parseInt(lastAcc);
+					int newAccNum = lastAccInt + 1;
+
+					// parsing back to have right type for argument for next function
+					String newAcc = Integer.toString(newAccNum);
+
+					AccountAccessor.writeStringToFile(loggedInUserID, newAcc);
+					// first argument is the file name, and the file name should be the user id
+
+					// creating a new file with this account num, balance = 0
+					try {
+						FileWriter myWriter = new FileWriter( newAcc + ".txt");
+						myWriter.write("0");
+						myWriter.close();
+						} catch (IOException e) {
+							System.out.println("An error occurred.");
+							e.printStackTrace();
+						}
+					}
+					catch (IOException e) {
+						output.println("Something went wrong.");
+					}
+
+					break;
+				}
 
 
 
-					//String accNums = AccountAccessor.resourceToString(loggedInUserAccounts);
-
-					// String newAccount =
-					//writeStringToFile(loggedInUserAccounts, newContents);
-
-					// probably need to read and write from a file
-					//this would be once the user is already established
-					// so do two things
-					// 1: write the acc # in the contents of the user file
-					// 2: create a new file for the account, with balance at 0 to start
-				// } catch (IOException e) {
-				// 	output.println("Something went wrong.");
-				// }
-			// case accSummary:
-			// 	try{
-			// 		// should display user name, account number, balance, last transaction
-
-			// } catch (IOException e) {
-			// 		output.println("Something went wrong.");
-			// 	}
-			// case tranHistory:
-			// 	try{
-			// 		// for each transaction, display: user, account number, tran type, tran amount, updated balance
-			// 		// every time the user does a transaction, save this info somewhere
-			// 		// append to a list, read to a file?
-
-			// } catch (IOException e) {
-			// 		output.println("Something went wrong.");
-			// 	}
-
-
-
-
-			}
 			return null;
-		} 
+			}
+		// end of public class ATM
 
-	private static class SystemExit extends Throwable {
+		static class SystemExit extends Throwable {
 		private static final long serialVersionUID = 1L;
 	}
 
-	private static class ATMException extends Exception {
+	static class ATMException extends Exception {
 		private static final long serialVersionUID = 1L;
 
 		public ATMException(String message) {

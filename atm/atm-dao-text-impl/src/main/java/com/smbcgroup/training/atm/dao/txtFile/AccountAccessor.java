@@ -30,7 +30,7 @@ public class AccountAccessor {
 		return Files.readString(Path.of(fileName + ".txt"));
 	}
 
-	private static void writeStringToFile(String fileName, String newContents) throws IOException {
+	public static void writeStringToFile(String fileName, String newContents) throws IOException {
 		Files.writeString(Path.of(fileName + ".txt"), newContents);
 	}
 
