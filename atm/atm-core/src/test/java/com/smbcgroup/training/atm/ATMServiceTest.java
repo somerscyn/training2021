@@ -1,9 +1,9 @@
 package com.smbcgroup.training.atm;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 
 import org.junit.Test;
 
@@ -92,6 +92,24 @@ public class ATMServiceTest {
 
 		public Account spy_updateAccount() {
 			return updateAccount_capture;
+		}
+
+		@Override
+		public void saveAccount(Account account) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'saveAccount'");
+		}
+
+		@Override
+		public Collection<Account> getUserAccounts(String userId) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'getUserAccounts'");
+		}
+
+		@Override
+		public void saveUserAccounts(String userID, Collection<Account> accounts) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'saveUserAccounts'");
 		}
 
 	}

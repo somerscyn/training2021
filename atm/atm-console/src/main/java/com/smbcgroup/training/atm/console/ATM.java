@@ -1,17 +1,35 @@
 package com.smbcgroup.training.atm.console;
 
+
 import java.io.BufferedReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import com.smbcgroup.training.atm.dao.txtFile.AccountAccessor;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.wink.client.ClientConfig;
+import org.apache.wink.client.ClientWebException;
+import org.apache.wink.client.RestClient;
+
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.smbcgroup.training.atm.ATMService;
+import com.smbcgroup.training.atm.Account;
+import com.smbcgroup.training.atm.dao.AccountNotFoundException;
+// import JPA file and correct pom
+import com.smbcgroup.training.atm.dao.jpa.AccountJPAImpl;
+
+
 
 public class ATM {
-	// running main here, so creating a new instance of the ATM class
 	public static void main(String[] args) throws IOException {
 		new ATM(System.in, System.out).beginSession();
 	}
@@ -19,32 +37,41 @@ public class ATM {
 	private static enum Action {
 		login, changeAccount, checkBalance, deposit, withdraw, transfer, openNewAcct, accSummary, tranHistory;
 	}
-	
+
+	private ATMService atmService = new ATMService(new AccountJPAImpl());
+	// move this to api controller
+
+	private static final String API_ROOT_URL = "http://localhost:8080/atm-api/";
+
+	private RestClient restClient;
 
 	private String loggedInUserID;
 	private BufferedReader inputReader;
 	private PrintStream output;
 	private String[] loggedInUserAccounts;
 	private String selectedAccount;
-	// initializing which enum is stored here, bc we need to log in first 
-
 	private Action selectedAction = Action.login;
 
-	// creating an object to input/ output to users -- essentially our reader
 	private ATM(InputStream input, PrintStream output) {
-		// reader for bringing content in
-
+		Application restClientApp = new Application() {
+			@Override
+			public Set<Object> getSingletons() {
+				HashSet<Object> set = new HashSet<Object>();
+				set.add(new JacksonJsonProvider());
+				return set;
+			}
+		};
+		this.restClient = new RestClient(new ClientConfig().applications(restClientApp));
 		this.inputReader = new BufferedReader(new InputStreamReader(input));
 		this.output = output;
-	}
 
+	}
 	private void beginSession() throws IOException {
 		try {
 			output.println("Welcome!");
 			while (true)
 				triggerAction();
 		}
-		// prints this message to users if something goes wrong in the code
 
 		catch (SystemExit e) {
 
@@ -88,14 +115,13 @@ public class ATM {
 			return true;
 		case transfer:
 			output.println("Enter account number for destination of funds, the origin of funds, and transfer amount. Seperate them by commas: ");
-			//String[ ] elements = input.split(",");
 			return true;
 		default:
 			return false;
 		}
 	}
 
-	private Action performActionAndGetNextAction(String input) throws ATMException, SystemExit {
+	private Action performActionAndGetNextAction(String input) throws ATMException, SystemExit, AccountNotFoundException {
 		if ("exit".equals(input)) {
 			throw new SystemExit(); }
 		if (selectedAction == null) {
@@ -105,11 +131,27 @@ public class ATM {
 				throw new ATMException("Invalid command.");
 			}
 		}
-		switch (selectedAction) {
+		switch(selectedAction) {
 			case login:
 				try {
-					loggedInUserAccounts = AccountAccessor.getUserAccounts(input);
-					loggedInUserID = input;
+					Collection<Account> collections = atmService.getUserAccounts(input) ;
+			
+					List<String> listNums = new ArrayList<String>();
+
+					for (Account item: collections){
+						String tempNum = item.getAccountNumber();
+						listNums.add(tempNum);
+					}
+					
+					int length = listNums.size();
+					
+					loggedInUserAccounts = new String [length];
+
+					listNums.toArray(loggedInUserAccounts);
+				
+					//loggedInUserAccounts = atmService.getUserAccounts(input);
+					output.println("Accounts: " + loggedInUserAccounts);
+				
 					return Action.changeAccount;
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -128,124 +170,68 @@ public class ATM {
 				
 			case checkBalance:
 				try {
-					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-					output.println("Balance: $" + balance);
-				} catch (IOException e) {
+					Account account = restClient.resource(API_ROOT_URL + "accounts/" + selectedAccount)
+							.accept(MediaType.APPLICATION_JSON_TYPE).get(Account.class);
+					output.println("Balance: $" + account.getBalance());
+				} catch (ClientWebException e) {
 					throw new RuntimeException(e);
 				}
 				break;
 			case deposit:
-				try {
+			
 					BigDecimal depositBD = new BigDecimal(input);
-					// getting the account balance to add to it
-					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-					balance = balance.add(depositBD);
+					atmService.deposit(selectedAccount, depositBD);
+					BigDecimal balance = atmService.getAccount(selectedAccount).getBalance();
+					output.println("Updated balance: $" + balance);
 
-					//updating the account --> this function is void
-					AccountAccessor.updateAccountBalance(selectedAccount, balance);
-
-					// now show the user their new balance
-
-					BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
-					output.println("Balance: $" + viewBalance);
-
-				} catch (IOException e) {
-					output.println("Something went wrong.");
-				}
+				
 				break;
 			case withdraw:
-				try {
+			
 					BigDecimal withdrawBD = new BigDecimal(input);
-					BigDecimal balance = AccountAccessor.getAccountBalance(selectedAccount);
-					balance = balance.subtract(withdrawBD);
-
-					AccountAccessor.updateAccountBalance(selectedAccount, balance);
-
-					BigDecimal viewBalance = AccountAccessor.getAccountBalance(selectedAccount);
-					output.println("Balance: $" + viewBalance);
+					atmService.withdraw(selectedAccount, withdrawBD);
+					BigDecimal new_balance = atmService.getAccount(selectedAccount).getBalance();
+					output.println("Updated balance: $" + new_balance);
 						
-					} catch (IOException e) {
-						output.println("Something went wrong.");
-					}
+				
 					break;
 			case transfer:
-				try{
+
 					String[ ] elements = input.split(",");
 					String accountDestination = elements[0];
 					String accountOrigin = elements[1];
 					String fundsAmount = elements [2];
 					BigDecimal fundsBD = new BigDecimal(fundsAmount);
-
-					//accessing account origin and withdrawing the funds
-					BigDecimal balance = AccountAccessor.getAccountBalance(accountOrigin);
-					balance = balance.subtract(fundsBD);
-					AccountAccessor.updateAccountBalance(accountOrigin, balance);
-
-					//accessing account destination and depositing funds
-					BigDecimal balance2 = AccountAccessor.getAccountBalance(accountDestination);
-					balance2 = balance2.add(fundsBD);
-					AccountAccessor.updateAccountBalance(accountDestination, balance);
-
-					//output new balances for both accounts
-					BigDecimal newBal1 = AccountAccessor.getAccountBalance(accountOrigin);
-					output.println("Balance for account " + accountOrigin + " is " + newBal1);
-
-					BigDecimal newBal2 = AccountAccessor.getAccountBalance(accountDestination);
-					output.println("Balance for account " + accountDestination + " is " + newBal2);
-					
-
-				} catch (IOException e) {
-						output.println("Something went wrong.");
-					}
+					atmService.transfer(accountOrigin, accountDestination, fundsBD);
 				break;
 			case openNewAcct:
-				try {
+				
 					String lastAcc = loggedInUserAccounts[loggedInUserAccounts.length-1];
 					output.println(lastAcc);
-					// parse to an integer, add 1, then turn back to a string
 
 					int lastAccInt = Integer.parseInt(lastAcc);
 					int newAccNum = lastAccInt + 1;
 
-					// parsing back to have right type for argument for next function
 					String newAcc = Integer.toString(newAccNum);
 
-					AccountAccessor.writeStringToFile(loggedInUserID, newAcc);
-					// first argument is the file name, and the file name should be the user id
-
-					// creating a new file with this account num, balance = 0
-					try {
-						FileWriter myWriter = new FileWriter( newAcc + ".txt");
-						myWriter.write("0");
-						myWriter.close();
-						} catch (IOException e) {
-							System.out.println("An error occurred.");
-							e.printStackTrace();
-						}
-					}
-					catch (IOException e) {
-						output.println("Something went wrong.");
-					}
-
+					// AccountJPAImpl.java 
+					// AccountAccessor.writeStringToFile(loggedInUserID, newAcc);
+						
+						///need to create an entity for new account
+					
 					break;
-				}
-
-
-
+				
 			return null;
-			}
+			} 
 		// end of public class ATM
+	// 	static class SystemExit extends Throwable {
+	// 	private static final long serialVersionUID = 1L;
+	// }
 
-		static class SystemExit extends Throwable {
+	class ATMException extends Exception {
 		private static final long serialVersionUID = 1L;
-	}
-
-	static class ATMException extends Exception {
-		private static final long serialVersionUID = 1L;
-
 		public ATMException(String message) {
 			super(message);
 		}
 	}
-
-}
+}}

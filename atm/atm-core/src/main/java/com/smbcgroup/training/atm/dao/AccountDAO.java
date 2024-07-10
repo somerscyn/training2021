@@ -1,14 +1,22 @@
 package com.smbcgroup.training.atm.dao;
 
+import java.util.Collection;
+
 import com.smbcgroup.training.atm.Account;
 import com.smbcgroup.training.atm.User;
 
 public interface AccountDAO {
 
-	User getUser(String userId) throws UserNotFoundException;
+	public User getUser(String userId) throws UserNotFoundException;
 
-	Account getAccount(String accountNumber) throws AccountNotFoundException;
+	public Account getAccount(String accountNumber) throws AccountNotFoundException;
 
-	void updateAccount(Account account);
+	public void saveAccount(Account account);
+
+	public Collection<Account> getUserAccounts(String userId);
+
+	public void saveUserAccounts(String userID, Collection<Account> accounts);
+
+	public void updateAccount(Account account) throws AccountNotFoundException;
 
 }

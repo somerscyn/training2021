@@ -14,7 +14,10 @@ public class StartSQL {
 		Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
 		try (Connection conn = DriverManager.getConnection("jdbc:derby:db;create=true")) {
 			readFromConsole(conn);
+			// TODO: also need to have a folder for the output / database
 		}
+
+	
 	}
 
 	private static void readFromConsole(Connection conn) throws IOException {
@@ -26,10 +29,13 @@ public class StartSQL {
 				System.out.println("Goodbye");
 				break;
 			}
-			try(PreparedStatement stmt = conn.prepareStatement(sql)) {
+			try(
+				PreparedStatement stmt = conn.prepareStatement(sql)) {
 				if (stmt.execute())
 					new ResultSetPrinter(stmt.getResultSet()).print();
-			} catch (SQLException e) {
+			} 
+		
+			catch (SQLException e) {
 				System.out.println("Failed to execute SQL: " + e.getMessage());
 			}
 		}

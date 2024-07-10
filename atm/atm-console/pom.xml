@@ -12,7 +12,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.smbcgroup.training.atm</groupId>
-			<artifactId>atm-dao-text-impl</artifactId>
+			<artifactId>atm-dao-jpa-impl</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

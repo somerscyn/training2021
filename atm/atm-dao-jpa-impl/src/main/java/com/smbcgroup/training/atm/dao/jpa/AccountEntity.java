@@ -34,6 +34,13 @@ public class AccountEntity {
 		this.user = user;
 	}
 
+	// public AccountEntity convertToAccount() {
+	// 	AccountEntity account = new AccountEntity();
+	// 	user.setAccounts(accountNumber);
+	// 	user.setAccounts(accounts.stream().map(AccountEntity::getAccountNumber).toArray(String[]::new));
+	// 	return user;
+	// }
+
 	public String getAccountNumber() {
 		return accountNumber;
 	}

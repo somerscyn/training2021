@@ -1,9 +1,12 @@
 package com.smbcgroup.training.atm.api;
 
+import java.math.BigDecimal;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +32,7 @@ public class APIController {
 	public ResponseEntity<User> getUser(@PathVariable("userId") String userId) {
 		try {
 			return new ResponseEntity<User>(service.getUser(userId), HttpStatus.OK);
-		} catch (UserNotFoundException e) {
+		} catch (UserNotFoundException e) { 
 			return new ResponseEntity<User>(HttpStatus.NOT_FOUND);
 		}
 	}
@@ -39,6 +42,29 @@ public class APIController {
 	public ResponseEntity<Account> getAccount(@PathVariable("accountNumber") String accountNumber) {
 		try {
 			return new ResponseEntity<Account>(service.getAccount(accountNumber), HttpStatus.OK);
+		} catch (AccountNotFoundException e) {
+			return new ResponseEntity<Account>(HttpStatus.NOT_FOUND);
+		}
+	}
+
+	// @ApiOperation("Deposit")
+	// @RequestMapping(value = "/accounts/{accountNumber}/deposits", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	// public ResponseEntity<Account> deposit(@PathVariable("accountNumber") String accountNumber, @RequestBody BigDecimal amount){
+	// 	try {
+	// 		service.deposit(accountNumber, amount);
+	// 		return new ResponseEntity<Account>(service.getAccount(accountNumber), HttpStatus.OK);
+	// 	} catch (AccountNotFoundException e) {
+	// 		return new ResponseEntity<Account>(HttpStatus.NOT_FOUND);
+	// 	}
+
+	// }
+
+	@ApiOperation("Deposit")
+	@RequestMapping(value = "/accounts/{accountNumber}/deposits", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Account> deposit(@PathVariable("accountNumber") String accountNumber, @RequestBody BigDecimal amount) {
+		try {
+			service.deposit(accountNumber, amount);
+			return new ResponseEntity<Account>(HttpStatus.OK);
 		} catch (AccountNotFoundException e) {
 			return new ResponseEntity<Account>(HttpStatus.NOT_FOUND);
 		}

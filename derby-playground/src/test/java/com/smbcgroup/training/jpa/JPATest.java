@@ -1,6 +1,8 @@
 package com.smbcgroup.training.jpa;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
+
+import java.math.BigDecimal;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -28,9 +30,28 @@ public class JPATest {
 	}
 
 	private void populateTables() {
-		em.persist(new Employee(1452,  "Alison Smith"));
+		Department treasury = new Department();
+		treasury.setId(1);
+		treasury.setName("Treasury");
+		Employee alisonSmith = new Employee();
+		alisonSmith.setId(1452);
+		alisonSmith.setName("Alison SMith");
+		alisonSmith.setWage(new BigDecimal(70000));
+		alisonSmith.setDepartment("Treasury");
+		em.persist(alisonSmith);
+
+		Employee bobsmith = new Employee();
+		bobsmith.setId(1453);
+		bobsmith.setName("Bob Smith");
+		bobsmith.setWage(new BigDecimal(40000));
+		bobsmith.setDepartment("Treasury");
+		em.persist(bobsmith);
+
+
+		//em.persist(new Employee(1452,  "Alison Smith"));
 	}
 	
+
 	@Test
 	public void testFind() {
 		Employee employee = em.find(Employee.class, 1452);

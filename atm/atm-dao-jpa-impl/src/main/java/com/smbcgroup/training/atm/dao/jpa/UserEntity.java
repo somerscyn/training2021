@@ -21,6 +21,8 @@ public class UserEntity {
 	@OneToMany(mappedBy = "user")
 	private List<AccountEntity> accounts;
 
+	private String accountNumber;
+
 	public UserEntity() {
 
 	}
@@ -48,8 +50,8 @@ public class UserEntity {
 		return accounts;
 	}
 
-	public void setAccounts(List<AccountEntity> accounts) {
-		this.accounts = accounts;
+	public void setAccounts(String accountNumber) {
+		this.accountNumber = accountNumber;
 	}
 
 }
