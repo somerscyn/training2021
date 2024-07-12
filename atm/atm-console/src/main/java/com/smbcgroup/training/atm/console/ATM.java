@@ -7,10 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.core.Application;
@@ -23,6 +20,7 @@ import org.apache.wink.client.RestClient;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.smbcgroup.training.atm.ATMService;
 import com.smbcgroup.training.atm.Account;
+import com.smbcgroup.training.atm.User;
 import com.smbcgroup.training.atm.dao.AccountNotFoundException;
 // import JPA file and correct pom
 import com.smbcgroup.training.atm.dao.jpa.AccountJPAImpl;
@@ -134,25 +132,30 @@ public class ATM {
 		switch(selectedAction) {
 			case login:
 				try {
-					Collection<Account> collections = atmService.getUserAccounts(input) ;
+					User user = restClient.resource(API_ROOT_URL + "users/" + input).accept(MediaType.APPLICATION_JSON_TYPE)
+						.get(User.class);
+
+					// Collection<Account> collections = atmService.getUserAccounts(input) ;
 			
-					List<String> listNums = new ArrayList<String>();
+					// List<String> listNums = new ArrayList<String>();
 
-					for (Account item: collections){
-						String tempNum = item.getAccountNumber();
-						listNums.add(tempNum);
-					}
+					// for (Account item: collections){
+					// 	String tempNum = item.getAccountNumber();
+					// 	listNums.add(tempNum);
+					// }
 					
-					int length = listNums.size();
+					// int length = listNums.size();
 					
-					loggedInUserAccounts = new String [length];
+					// loggedInUserAccounts = new String [length];
 
-					listNums.toArray(loggedInUserAccounts);
+					// listNums.toArray(loggedInUserAccounts);
 				
-					//loggedInUserAccounts = atmService.getUserAccounts(input);
-					output.println("Accounts: " + loggedInUserAccounts);
-				
+					// //loggedInUserAccounts = atmService.getUserAccounts(input);
+					// output.println("Accounts: " + loggedInUserAccounts);
+
+					loggedInUserAccounts = user.getAccounts();
 					return Action.changeAccount;
+				
 				} catch (IOException e) {
 					e.printStackTrace();
 					throw new ATMException("Invalid user ID.");
@@ -179,6 +182,11 @@ public class ATM {
 				break;
 			case deposit:
 			
+				
+			restClient.resource(API_ROOT_URL + "accounts/" + selectedAccount + "/deposits")
+			.contentType(MediaType.APPLICATION_JSON_TYPE).post(Account.class, new BigDecimal(input));
+	output.println("Deposit accepted"); 
+	
 					BigDecimal depositBD = new BigDecimal(input);
 					atmService.deposit(selectedAccount, depositBD);
 					BigDecimal balance = atmService.getAccount(selectedAccount).getBalance();
